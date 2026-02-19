@@ -4,10 +4,11 @@
 <title>Dashboard</title>
 <style>
 body{font-family:Arial;text-align:center;background:#111;color:white}
-.card{background:#1e1e1e;padding:20px;margin:20px auto;width:300px;border-radius:15px}
-.btn{display:block;margin:10px;padding:12px;background:#6c5cff;color:white;text-decoration:none;border-radius:10px}
+.card{background:#1e1e1e;padding:20px;margin:20px auto;width:320px;border-radius:15px}
+.btn{display:block;margin:8px;padding:12px;background:#6c5cff;color:white;text-decoration:none;border-radius:10px}
 .gacha{background:linear-gradient(45deg,#ff00cc,#3333ff)}
 .result{margin-top:20px;font-size:20px}
+.log{font-size:14px;text-align:left;margin-top:10px}
 </style>
 </head>
 <body>
@@ -20,16 +21,20 @@ body{font-family:Arial;text-align:center;background:#111;color:white}
 </div>
 
 <div class="card">
-<h3>Görev Butonları</h3>
+<h3>Görevler</h3>
 
-<a class="btn" href="/add_xp/50">+50 XP (Konu Çalıştım)</a>
-<a class="btn" href="/add_xp/100">+100 XP (Test Bitti)</a>
-<a class="btn" href="/add_coin/200">+200 Coin (Konu Bitti)</a>
+<a class="btn" href="/task/branch">Branş Deneme → 35 coin / 10 xp</a>
+<a class="btn" href="/task/konu">Konu Bitirme → 150 coin / 45 xp</a>
+<a class="btn" href="/task/ayt">AYT Deneme → 200 coin / 55 xp</a>
+<a class="btn" href="/task/tyt">TYT Deneme → 200 coin / 55 xp</a>
+<a class="btn" href="/task/analysis">Deneme Analizi → 50 coin / 25 xp</a>
+<a class="btn" href="/task/mistake">Yanlışlara Bakma → 100 coin / 30 xp</a>
+
 </div>
 
 <div class="card">
-<h3>🎰 GACHA BOX (100 coin)</h3>
-<a class="btn gacha" href="/gacha">OPEN</a>
+<h3>🎰 GACHA (100 coin)</h3>
+<a class="btn gacha" href="/gacha">OPEN BOX</a>
 
 {% if result %}
 <div class="result">
@@ -37,6 +42,15 @@ body{font-family:Arial;text-align:center;background:#111;color:white}
 {{result[1]}}
 </div>
 {% endif %}
+</div>
+
+<div class="card">
+<h3>Son Lootlar</h3>
+<div class="log">
+{% for item in log %}
+• {{item.rarity}} — {{item.reward}}<br>
+{% endfor %}
+</div>
 </div>
 
 <a href="/logout">Logout</a>

@@ -1,7 +1,7 @@
 import json
 import os
 import random
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, redirect, session
 
 app = Flask(__name__)
 app.secret_key = "supersecretkey"
@@ -10,6 +10,7 @@ ADMIN_EMAIL = "admin@mail.com"
 ADMIN_PASSWORD = "1234"
 
 DATA_FILE = "data.json"
+LOG_FILE = "gacha_log.json"
 
 # ---------- DATA ----------
 def load_data():
@@ -21,6 +22,17 @@ def load_data():
 def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f)
+
+# ---------- LOG ----------
+def load_log():
+    if not os.path.exists(LOG_FILE):
+        return []
+    with open(LOG_FILE, "r") as f:
+        return json.load(f)
+
+def save_log(log):
+    with open(LOG_FILE, "w") as f:
+        json.dump(log, f)
 
 # ---------- GACHA ----------
 def roll_gacha():
@@ -61,6 +73,8 @@ def home():
 
 @app.route("/login", methods=["GET","POST"])
 def login():
+    from flask import request
+
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
@@ -80,39 +94,51 @@ def dashboard():
         return redirect("/login")
 
     data = load_data()
+    log = load_log()[-10:][::-1]
+
     return render_template(
         "dashboard.html",
         xp=data["xp"],
         coin=data["coin"],
+        log=log,
         result=session.pop("gacha_result", None)
     )
 
 
-# ---------- ACTIONS ----------
-@app.route("/add_xp/<amount>")
-def add_xp(amount):
+# ---------- TASK SYSTEM ----------
+@app.route("/task/<name>")
+def task(name):
+
+    rewards = {
+        "branch": (35,10),
+        "konu": (150,45),
+        "ayt": (200,55),
+        "tyt": (200,55),
+        "analysis": (50,25),
+        "mistake": (100,30)
+    }
+
+    if name not in rewards:
+        return redirect("/dashboard")
+
+    coin, xp = rewards[name]
+
     data = load_data()
-    data["xp"] += int(amount)
+    data["coin"] += coin
+    data["xp"] += xp
     save_data(data)
+
     return redirect("/dashboard")
 
 
-@app.route("/add_coin/<amount>")
-def add_coin(amount):
-    data = load_data()
-    data["coin"] += int(amount)
-    save_data(data)
-    return redirect("/dashboard")
-
-
-# ---------- GACHA ROUTE ----------
+# ---------- GACHA ----------
 @app.route("/gacha")
 def gacha():
 
     data = load_data()
 
     if data["coin"] < 100:
-        session["gacha_result"] = ("NOCOIN", "Coin yetmez (100 gerekli)")
+        session["gacha_result"] = ("NO COIN", "100 coin gerekli")
         return redirect("/dashboard")
 
     data["coin"] -= 100
@@ -124,6 +150,11 @@ def gacha():
         data["coin"] += amount
 
     save_data(data)
+
+    # LOG SAVE
+    log = load_log()
+    log.append({"rarity":rarity,"reward":reward})
+    save_log(log)
 
     session["gacha_result"] = (rarity, reward)
     return redirect("/dashboard")
