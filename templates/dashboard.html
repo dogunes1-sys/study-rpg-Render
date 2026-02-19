@@ -2,23 +2,42 @@
 <html>
 <head>
 <title>Dashboard</title>
+<style>
+body{font-family:Arial;text-align:center;background:#111;color:white}
+.card{background:#1e1e1e;padding:20px;margin:20px auto;width:300px;border-radius:15px}
+.btn{display:block;margin:10px;padding:12px;background:#6c5cff;color:white;text-decoration:none;border-radius:10px}
+.gacha{background:linear-gradient(45deg,#ff00cc,#3333ff)}
+.result{margin-top:20px;font-size:20px}
+</style>
 </head>
 <body>
 
-<h2>Welcome {{user}}</h2>
+<h2>STUDY RPG PANEL</h2>
 
+<div class="card">
 <h3>XP: {{xp}}</h3>
 <h3>Coin: {{coin}}</h3>
+</div>
 
-<hr>
-
+<div class="card">
 <h3>Görev Butonları</h3>
 
-<a href="/add_xp/50">+50 XP (Konu Çalıştım)</a><br><br>
-<a href="/add_xp/100">+100 XP (Test Bitti)</a><br><br>
-<a href="/add_coin/200">+200 Coin (Konu Tamamlandı)</a><br><br>
+<a class="btn" href="/add_xp/50">+50 XP (Konu Çalıştım)</a>
+<a class="btn" href="/add_xp/100">+100 XP (Test Bitti)</a>
+<a class="btn" href="/add_coin/200">+200 Coin (Konu Bitti)</a>
+</div>
 
-<hr>
+<div class="card">
+<h3>🎰 GACHA BOX (100 coin)</h3>
+<a class="btn gacha" href="/gacha">OPEN</a>
+
+{% if result %}
+<div class="result">
+<b>{{result[0]}}</b><br>
+{{result[1]}}
+</div>
+{% endif %}
+</div>
 
 <a href="/logout">Logout</a>
 

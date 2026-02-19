@@ -1,5 +1,6 @@
 import json
 import os
+import random
 from flask import Flask, render_template, request, redirect, session
 
 app = Flask(__name__)
@@ -10,21 +11,47 @@ ADMIN_PASSWORD = "1234"
 
 DATA_FILE = "data.json"
 
-
-# -------- DATA SYSTEM --------
+# ---------- DATA ----------
 def load_data():
     if not os.path.exists(DATA_FILE):
-        return {"xp": 0, "coin": 0}
+        return {"xp": 0, "coin": 500}
     with open(DATA_FILE, "r") as f:
         return json.load(f)
-
 
 def save_data(data):
     with open(DATA_FILE, "w") as f:
         json.dump(data, f)
 
+# ---------- GACHA ----------
+def roll_gacha():
 
-# -------- ROUTES --------
+    roll = random.randint(1,100)
+
+    if roll <= 60:
+        return "COMMON", "☕ 5 dk mola"
+
+    elif roll <= 90:
+        return "RARE", "📺 1 video"
+
+    elif roll <= 99:
+        reward = random.choice([
+            "🎮 45 dk oyun",
+            "📺 1 bölüm anime/dizi",
+            "⚡ XP Boost (1 gün x2)",
+            "💰 100 coin"
+        ])
+        return "EPIC", reward
+
+    else:
+        reward = random.choice([
+            "🔥 2 saat guilt-free oyun",
+            "💎 500 coin",
+            "🚀 XP Potion (3 görev x3)"
+        ])
+        return "LEGENDARY", reward
+
+
+# ---------- ROUTES ----------
 @app.route("/")
 def home():
     if "user" in session:
@@ -32,7 +59,7 @@ def home():
     return redirect("/login")
 
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/login", methods=["GET","POST"])
 def login():
     if request.method == "POST":
         email = request.form["email"]
@@ -57,11 +84,11 @@ def dashboard():
         "dashboard.html",
         xp=data["xp"],
         coin=data["coin"],
-        user=session["user"]
+        result=session.pop("gacha_result", None)
     )
 
 
-# -------- ACTION BUTTONS --------
+# ---------- ACTIONS ----------
 @app.route("/add_xp/<amount>")
 def add_xp(amount):
     data = load_data()
@@ -75,6 +102,30 @@ def add_coin(amount):
     data = load_data()
     data["coin"] += int(amount)
     save_data(data)
+    return redirect("/dashboard")
+
+
+# ---------- GACHA ROUTE ----------
+@app.route("/gacha")
+def gacha():
+
+    data = load_data()
+
+    if data["coin"] < 100:
+        session["gacha_result"] = ("NOCOIN", "Coin yetmez (100 gerekli)")
+        return redirect("/dashboard")
+
+    data["coin"] -= 100
+
+    rarity, reward = roll_gacha()
+
+    if "coin" in reward:
+        amount = int(reward.split()[0])
+        data["coin"] += amount
+
+    save_data(data)
+
+    session["gacha_result"] = (rarity, reward)
     return redirect("/dashboard")
 
 
