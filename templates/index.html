@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>STUDY RPG PANEL</title>
+</head>
+<body>
+
+<h1>STUDY RPG PANEL</h1>
+
+<h2>Görevler</h2>
+<ul>
+{% for q in quests %}
+<li>
+{{ q.name }} - {{ q.xp }} XP
+<a href="/complete/{{ q.id }}">✅</a>
+</li>
+{% endfor %}
+</ul>
+
+<h2>Görev Ekle</h2>
+<form action="/add" method="post">
+İsim: <input name="name"><br><br>
+XP: <input name="xp"><br><br>
+<button type="submit">Ekle</button>
+</form>
+
+<hr>
+
+<h2>Ödüller</h2>
+<ul>
+{% for r in rewards %}
+<li>
+{{ r.name }} - {{ r.cost }} Coin
+</li>
+{% endfor %}
+</ul>
+
+<h2>Ödül Ekle</h2>
+<form action="/add_reward" method="post">
+İsim: <
