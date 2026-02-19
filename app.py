@@ -145,9 +145,11 @@ def gacha():
 
     rarity, reward = roll_gacha()
 
+    # coin ödülü varsa ekle
     if "coin" in reward:
-        amount = int(reward.split()[0])
-        data["coin"] += amount
+        for word in reward.split():
+            if word.isdigit():
+                data["coin"] += int(word)
 
     save_data(data)
 
