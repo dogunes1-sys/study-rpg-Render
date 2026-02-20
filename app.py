@@ -5,9 +5,30 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "secret123"
+app.secret_key = os.getenv("SECRET_KEY","fallback-secret")
 
-users = {}
+import json
+
+DB_FILE = "database.json"
+
+def load_db():
+    if os.path.exists(DB_FILE):
+        try:
+            with open(DB_FILE,"r") as f:
+                return json.load(f)
+        except:
+            return {}
+    return {}
+
+def save_db(data):
+    temp="temp.json"
+    with open(temp,"w") as f:
+        json.dump(data,f,indent=4)
+    os.replace(temp,DB_FILE)
+
+
+users = load_db()
+
 
 tasks = {
     "branch": {"name": "Branş Deneme", "coin": 35, "xp": 10},
@@ -27,7 +48,7 @@ loot_table = [
 
 def get_user(email):
     if email not in users:
-        users[email] = {
+        users[email]={
             "coin":0,
             "xp":0,
             "level":1,
@@ -35,7 +56,9 @@ def get_user(email):
             "last_task":None,
             "logs":[]
         }
+        save_db(users)
     return users[email]
+
 
 def level_up(user):
     need=user["level"]*100
@@ -99,6 +122,7 @@ def task(key):
         streak_update(user)
         level_up(user)
         user["logs"].append(f"✔ {t['name']} +{t['coin']} coin +{t['xp']} xp")
+        save_db(users)
 
     return redirect("/dashboard")
 
@@ -120,6 +144,7 @@ def gacha():
         user["coin"]+=int(reward.split()[0])
 
     user["logs"].append(f"🎁 {rarity} → {reward}")
+    save_db(users)
 
     return render_template("gacha.html",rarity=rarity,reward=reward)
 
