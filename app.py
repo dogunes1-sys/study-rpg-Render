@@ -12,23 +12,47 @@ SUPABASE_URL=os.getenv("SUPABASE_URL")
 SUPABASE_KEY=os.getenv("SUPABASE_KEY")
 supabase=create_client(SUPABASE_URL,SUPABASE_KEY)
 
-
 # =========================
 # TASKS
 # =========================
-tasks={
-"ayt_fizik":{"name":"AYT Fizik Branş","coin":120,"xp":40},
-"ayt_kimya":{"name":"AYT Kimya Branş","coin":120,"xp":40},
-"ayt_biyoloji":{"name":"AYT Biyoloji Branş","coin":120,"xp":40},
-"branch":{"name":"Genel Branş Deneme","coin":35,"xp":10},
+tasks = {
+"branch":{"name":"Branş Deneme","coin":35,"xp":10},
 "sb":{"name":"Soru Bankası Konu Bitirme","coin":400,"xp":45},
+"ayt":{"name":"AYT Deneme","coin":500,"xp":55},
+"tyt":{"name":"TYT Deneme","coin":500,"xp":55},
 "analysis":{"name":"Deneme Analizi","coin":70,"xp":25},
-"mistake":{"name":"Yanlışlara Bakma","coin":100,"xp":30}
+"mistake":{"name":"Yanlışlara Bakma","coin":100,"xp":30},
+
+"ayt_fizik":{"name":"AYT Fizik Branş","coin":60,"xp":20},
+"ayt_kimya":{"name":"AYT Kimya Branş","coin":60,"xp":20},
+"ayt_biyoloji":{"name":"AYT Biyoloji Branş","coin":60,"xp":20},
+
+"tyt_fizik":{"name":"TYT Fizik Branş","coin":30,"xp":10},
+"tyt_kimya":{"name":"TYT Kimya Branş","coin":30,"xp":10},
+"tyt_biyoloji":{"name":"TYT Biyoloji Branş","coin":30,"xp":10},
+"tyt_sosyal":{"name":"TYT Sosyal Branş","coin":45,"xp":15}
 }
 
+# =========================
+# RANK + ACHIEVEMENT + FAKE BOARD
+# =========================
+RANKS=[(1,"Beginner"),(6,"Apprentice"),(11,"Scholar"),(21,"Master"),(36,"Grandmaster")]
+
+ACHIEVEMENTS=[
+("rookie",10,"Rookie"),
+("grinder",50,"Grinder"),
+("machine",100,"Machine")
+]
+
+FAKE_LEADERBOARD=[
+("ShadowMaster",2400),
+("BrainBeast",2100),
+("UltraMind",1800),
+("FocusGod",1500)
+]
 
 # =========================
-# LOOT TABLE
+# LOOT
 # =========================
 loot_table=[
 ("Common",60,["5 dk mola","10 coin","motivasyon müziği"]),
@@ -37,9 +61,8 @@ loot_table=[
 ("Legendary",1,["2 saat oyun guiltfree","500 coin","XP x3 potion"])
 ]
 
-
 # =========================
-# USER FETCH / CREATE
+# USER FETCH
 # =========================
 def get_user(email):
 
@@ -47,38 +70,37 @@ def get_user(email):
 
     if not res.data:
         new_user={
-            "email":email,
-            "coin":0,
-            "xp":0,
-            "level":1,
-            "streak":0,
-            "last_task":None,
-            "daily":None,
-            "logs":[]
+        "email":email,
+        "coin":0,
+        "xp":0,
+        "level":1,
+        "streak":0,
+        "last_task":None,
+        "daily":None,
+        "logs":[],
+        "tasks_done":0,
+        "achievements":[]
         }
         supabase.table("users").insert(new_user).execute()
         return new_user
 
     user=res.data[0]
 
-    # eksik alan fix
     if user.get("logs") is None:
         user["logs"]=[]
     if "daily" not in user:
         user["daily"]=None
+    if "tasks_done" not in user:
+        user["tasks_done"]=0
+    if "achievements" not in user:
+        user["achievements"]=[]
 
     return user
 
-
-# =========================
-# UPDATE USER
 # =========================
 def update_user(email,data):
     supabase.table("users").update(data).eq("email",email).execute()
 
-
-# =========================
-# LEVEL SYSTEM
 # =========================
 def level_up(user):
     need=user["level"]*100
@@ -87,15 +109,20 @@ def level_up(user):
         user["level"]+=1
         need=user["level"]*100
 
-
 # =========================
-# STREAK SYSTEM
+def get_rank(level):
+    rank="Beginner"
+    for lvl,name in RANKS:
+        if level>=lvl:
+            rank=name
+    return rank
+
 # =========================
 def streak_update(user):
     today=str(datetime.date.today())
 
     if user["last_task"]==today:
-        return
+        return 0
 
     if user["last_task"]==str(datetime.date.today()-datetime.timedelta(days=1)):
         user["streak"]+=1
@@ -104,14 +131,18 @@ def streak_update(user):
 
     user["last_task"]=today
 
+    if user["streak"]==3:
+        return 10
+    if user["streak"]==7:
+        return 30
+    if user["streak"]==14:
+        return 100
 
-# =========================
-# DAILY REWARD
+    return 0
+
 # =========================
 def claim_daily(user,email):
-
     today=str(datetime.date.today())
-
     if user.get("daily")==today:
         return False
 
@@ -119,20 +150,12 @@ def claim_daily(user,email):
     user["coin"]+=reward
     user["daily"]=today
 
-    logs=user["logs"] or []
-    logs.append(f"🎁 Günlük ödül +{reward} coin")
+    logs=user["logs"]
+    logs.append(f"🎁 Günlük ödül +{reward}")
 
-    update_user(email,{
-        "coin":user["coin"],
-        "daily":today,
-        "logs":logs
-    })
-
+    update_user(email,{"coin":user["coin"],"daily":today,"logs":logs})
     return True
 
-
-# =========================
-# GACHA RNG
 # =========================
 def roll_loot():
     r=random.randint(1,100)
@@ -141,7 +164,6 @@ def roll_loot():
         total+=chance
         if r<=total:
             return rarity,random.choice(rewards)
-
 
 # =========================
 # ROUTES
@@ -152,14 +174,12 @@ def home():
         return redirect("/dashboard")
     return redirect("/login")
 
-
 @app.route("/login",methods=["GET","POST"])
 def login():
     if request.method=="POST":
         session["user"]=request.form["email"]
         return redirect("/dashboard")
     return render_template("login.html")
-
 
 @app.route("/dashboard")
 def dashboard():
@@ -169,9 +189,23 @@ def dashboard():
     email=session["user"]
     user=get_user(email)
 
-    return render_template("dashboard.html",user=user,tasks=tasks,email=email)
+    rank=get_rank(user["level"])
 
+    leaderboard=sorted(
+        FAKE_LEADERBOARD+[("You",user["coin"])],
+        key=lambda x:x[1],
+        reverse=True
+    )
 
+    return render_template("dashboard.html",
+        user=user,
+        tasks=tasks,
+        email=email,
+        rank=rank,
+        leaderboard=leaderboard
+    )
+
+# =========================
 @app.route("/task/<key>")
 def task(key):
     if "user" not in session:
@@ -185,25 +219,38 @@ def task(key):
 
         user["coin"]+=t["coin"]
         user["xp"]+=t["xp"]
+        user["tasks_done"]+=1
 
-        streak_update(user)
+        bonus=streak_update(user)
+        user["coin"]+=bonus
+
         level_up(user)
 
-        logs=user["logs"] or []
-        logs.append(f"✔ {t['name']} +{t['coin']} coin +{t['xp']} xp")
+        logs=user["logs"]
+        logs.append(f"✔ {t['name']} +{t['coin']}c +{t['xp']}xp")
+
+        if bonus>0:
+            logs.append(f"🔥 Streak bonus +{bonus}")
+
+        for key_req,count,title in ACHIEVEMENTS:
+            if user["tasks_done"]>=count and title not in user["achievements"]:
+                user["achievements"].append(title)
+                logs.append(f"🏆 {title} unlocked")
 
         update_user(email,{
-            "coin":user["coin"],
-            "xp":user["xp"],
-            "level":user["level"],
-            "streak":user["streak"],
-            "last_task":user["last_task"],
-            "logs":logs
+        "coin":user["coin"],
+        "xp":user["xp"],
+        "level":user["level"],
+        "streak":user["streak"],
+        "last_task":user["last_task"],
+        "logs":logs,
+        "tasks_done":user["tasks_done"],
+        "achievements":user["achievements"]
         })
 
     return redirect("/dashboard")
 
-
+# =========================
 @app.route("/gacha")
 def gacha():
     if "user" not in session:
@@ -221,17 +268,14 @@ def gacha():
     if "coin" in reward:
         user["coin"]+=int(reward.split()[0])
 
-    logs=user["logs"] or []
-    logs.append(f"🎁 {rarity} → {reward}")
+    logs=user["logs"]
+    logs.append(f"🎰 {rarity} → {reward}")
 
-    update_user(email,{
-        "coin":user["coin"],
-        "logs":logs
-    })
+    update_user(email,{"coin":user["coin"],"logs":logs})
 
     return render_template("gacha.html",rarity=rarity,reward=reward)
 
-
+# =========================
 @app.route("/daily")
 def daily():
     if "user" not in session:
@@ -239,17 +283,15 @@ def daily():
 
     email=session["user"]
     user=get_user(email)
-
     claim_daily(user,email)
-
     return redirect("/dashboard")
 
-
+# =========================
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
-
+# =========================
 if __name__=="__main__":
     app.run(host="0.0.0.0",port=10000)
