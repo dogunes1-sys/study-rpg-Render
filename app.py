@@ -34,7 +34,7 @@ tasks = {
 }
 
 # =========================
-# RANK + ACHIEVEMENT + FAKE BOARD
+# RANK + ACHIEVEMENT
 # =========================
 RANKS=[(1,"Beginner"),(6,"Apprentice"),(11,"Scholar"),(21,"Master"),(36,"Grandmaster")]
 
@@ -86,20 +86,32 @@ def get_user(email):
 
     user=res.data[0]
 
+    # ---- NULL FIX ----
     if user.get("logs") is None:
         user["logs"]=[]
-    if "daily" not in user:
+    if user.get("daily") is None:
         user["daily"]=None
-    if "tasks_done" not in user:
+    if user.get("tasks_done") is None:
         user["tasks_done"]=0
-    if "achievements" not in user:
+    if user.get("achievements") is None:
         user["achievements"]=[]
 
     return user
 
 # =========================
+# SAFE UPDATE
+# =========================
 def update_user(email,data):
-    supabase.table("users").update(data).eq("email",email).execute()
+
+    allowed={
+    "coin","xp","level","streak",
+    "last_task","logs","daily",
+    "tasks_done","achievements"
+    }
+
+    clean={k:v for k,v in data.items() if k in allowed}
+
+    supabase.table("users").update(clean).eq("email",email).execute()
 
 # =========================
 def level_up(user):
@@ -131,12 +143,9 @@ def streak_update(user):
 
     user["last_task"]=today
 
-    if user["streak"]==3:
-        return 10
-    if user["streak"]==7:
-        return 30
-    if user["streak"]==14:
-        return 100
+    if user["streak"]==3: return 10
+    if user["streak"]==7: return 30
+    if user["streak"]==14: return 100
 
     return 0
 
@@ -232,6 +241,7 @@ def task(key):
         if bonus>0:
             logs.append(f"🔥 Streak bonus +{bonus}")
 
+        # achievements
         for key_req,count,title in ACHIEVEMENTS:
             if user["tasks_done"]>=count and title not in user["achievements"]:
                 user["achievements"].append(title)
