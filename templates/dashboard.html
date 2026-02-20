@@ -1,42 +1,21 @@
-<!DOCTYPE html>
-<html>
-<body style="font-family:sans-serif">
+<h2>Hoşgeldin {{email}}</h2>
 
-<h2>Dashboard</h2>
-
-Level: {{user.level}} <br>
-XP: {{user.xp}} <br>
-Coin: {{user.coin}} <br>
-Streak: {{user.streak}} 🔥
+<h3>Coin: {{user.coin}}</h3>
+<h3>XP: {{user.xp}}</h3>
 
 <hr>
 
-<h3>Görevler</h3>
+<h2>Görevler</h2>
 
 {% for key,task in tasks.items() %}
-<a href="/task/{{key}}">
-<button>{{task.name}} (+{{task.coin}} coin / {{task.xp}} XP)</button>
-</a>
+<div style="margin:10px;padding:10px;border:1px solid gray;">
+    <b>{{task.name}}</b><br>
+    +{{task.coin}} coin | +{{task.xp}} xp<br><br>
+    <a href="/task/{{key}}">
+        <button>Yaptım ✓</button>
+    </a>
+</div>
+{% endfor %}
+
 <br><br>
-{% endfor %}
-
-<hr>
-
-<h3>🎁 Gacha</h3>
-
-<a href="/gacha">
-<button>Gacha Aç (150 coin)</button>
-</a>
-
-<hr>
-
-<h3>Loot Log</h3>
-{% for l in user.loot_log %}
-{{l}}<br>
-{% endfor %}
-
-<br>
-<a href="/logout">Logout</a>
-
-</body>
-</html>
+<a href="/logout">Çıkış Yap</a>
