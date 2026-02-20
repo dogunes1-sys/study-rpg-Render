@@ -23,6 +23,10 @@ tasks = {
 "analysis":{"name":"Deneme Analizi","coin":70,"xp":25},
 "mistake":{"name":"Yanlışlara Bakma","coin":100,"xp":30},
 
+# --- YENİ GÖREVLER ---
+"single_q":{"name":"Tekli Soru Çözüm","coin":20,"xp":5},
+"video":{"name":"1 Ders Videosu","coin":50,"xp":15},
+
 "ayt_fizik":{"name":"AYT Fizik Branş","coin":60,"xp":20},
 "ayt_kimya":{"name":"AYT Kimya Branş","coin":60,"xp":20},
 "ayt_biyoloji":{"name":"AYT Biyoloji Branş","coin":60,"xp":20},
