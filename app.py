@@ -31,15 +31,23 @@ loot_table=[
 
 
 def get_user(email):
-    res=supabase.table("users").select("*").eq("email",email).execute()
+    if email not in users:
+        users[email]={
+            "coin":0,
+            "xp":0,
+            "level":1,
+            "streak":0,
+            "last_task":None,
+            "logs":[]
+        }
+        save_db(users)
 
-    if not res.data:
-        supabase.table("users").insert({
-            "email":email
-        }).execute()
-        return get_user(email)
+    # eski kullanıcılar için fix
+    if users[email].get("logs") is None:
+        users[email]["logs"]=[]
+        save_db(users)
 
-    return res.data[0]
+    return users[email]
 
 
 def update_user(email,data):
