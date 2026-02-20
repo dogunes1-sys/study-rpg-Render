@@ -30,9 +30,17 @@ loot_table=[
 ]
 
 
+# =========================
+# USER FETCH / CREATE
+# =========================
 def get_user(email):
-    if email not in users:
-        users[email]={
+
+    res=supabase.table("users").select("*").eq("email",email).execute()
+
+    # kullanıcı yoksa oluştur
+    if not res.data:
+        new_user={
+            "email":email,
             "coin":0,
             "xp":0,
             "level":1,
@@ -40,20 +48,29 @@ def get_user(email):
             "last_task":None,
             "logs":[]
         }
-        save_db(users)
+        supabase.table("users").insert(new_user).execute()
+        return new_user
 
-    # eski kullanıcılar için fix
-    if users[email].get("logs") is None:
-        users[email]["logs"]=[]
-        save_db(users)
+    user=res.data[0]
 
-    return users[email]
+    # logs None ise fix
+    if user.get("logs") is None:
+        user["logs"]=[]
+        supabase.table("users").update({"logs":[]}).eq("email",email).execute()
+
+    return user
 
 
+# =========================
+# UPDATE USER
+# =========================
 def update_user(email,data):
     supabase.table("users").update(data).eq("email",email).execute()
 
 
+# =========================
+# LEVEL SYSTEM
+# =========================
 def level_up(user):
     need=user["level"]*100
     while user["xp"]>=need:
@@ -62,6 +79,9 @@ def level_up(user):
         need=user["level"]*100
 
 
+# =========================
+# STREAK SYSTEM
+# =========================
 def streak_update(user):
     today=str(datetime.date.today())
 
@@ -76,6 +96,9 @@ def streak_update(user):
     user["last_task"]=today
 
 
+# =========================
+# GACHA RNG
+# =========================
 def roll_loot():
     r=random.randint(1,100)
     total=0
@@ -85,6 +108,9 @@ def roll_loot():
             return rarity,random.choice(rewards)
 
 
+# =========================
+# ROUTES
+# =========================
 @app.route("/")
 def home():
     if "user" in session:
