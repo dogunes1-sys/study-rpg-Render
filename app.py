@@ -1,4 +1,4 @@
-import os
+import os, random, datetime
 from flask import Flask, render_template, request, redirect, session
 from dotenv import load_dotenv
 
@@ -7,10 +7,10 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = "secret123"
 
-# Basit user database (RAM)
+# RAM database
 users = {}
 
-# Görevler
+# görevler
 tasks = {
     "branch": {"name": "Branş Deneme", "coin": 35, "xp": 10},
     "sb": {"name": "Soru Bankası Bitirme", "coin": 150, "xp": 45},
@@ -20,17 +20,66 @@ tasks = {
     "mistake": {"name": "Yanlışlara Bakma", "coin": 100, "xp": 30}
 }
 
+# gacha loot table
+loot_table = [
+    ("Common",60,["5 dk mola","10 coin","motivasyon müziği"]),
+    ("Rare",30,["1 video","30 coin","küçük oyun"]),
+    ("Epic",9,["1 bölüm anime","100 coin","XP x2 boost"]),
+    ("Legendary",1,["2 saat oyun guiltfree","500 coin","XP x3 potion"])
+]
+
+# ---------- HELPERS ----------
+
+def get_user(email):
+    if email not in users:
+        users[email] = {
+            "coin":0,
+            "xp":0,
+            "level":1,
+            "streak":0,
+            "last_task":None,
+            "logs":[]
+        }
+    return users[email]
+
+def level_up(user):
+    need = user["level"]*100
+    while user["xp"] >= need:
+        user["xp"] -= need
+        user["level"] += 1
+        need = user["level"]*100
+
+def streak_update(user):
+    today = str(datetime.date.today())
+    if user["last_task"] == today:
+        return
+    if user["last_task"] == str(datetime.date.today()-datetime.timedelta(days=1)):
+        user["streak"] += 1
+    else:
+        user["streak"] = 1
+    user["last_task"] = today
+
+def roll_loot():
+    r = random.randint(1,100)
+    total = 0
+    for rarity,chance,rewards in loot_table:
+        total += chance
+        if r <= total:
+            return rarity, random.choice(rewards)
+
+# ---------- ROUTES ----------
+
 @app.route("/")
 def home():
     if "user" in session:
         return redirect("/dashboard")
     return redirect("/login")
 
-@app.route("/login", methods=["GET","POST"])
+@app.route("/login",methods=["GET","POST"])
 def login():
-    if request.method == "POST":
+    if request.method=="POST":
         email = request.form["email"]
-        session["user"] = email
+        session["user"]=email
         return redirect("/dashboard")
     return render_template("login.html")
 
@@ -39,23 +88,57 @@ def dashboard():
     if "user" not in session:
         return redirect("/login")
 
-    email = session["user"]
+    email=session["user"]
+    user=get_user(email)
 
-    if email not in users:
-        users[email] = {"coin":0,"xp":0}
-
-    return render_template("dashboard.html", user=users[email], tasks=tasks, email=email)
+    return render_template(
+        "dashboard.html",
+        user=user,
+        tasks=tasks,
+        email=email
+    )
 
 @app.route("/task/<key>")
 def do_task(key):
     if "user" not in session:
         return redirect("/login")
 
-    email = session["user"]
+    user=get_user(session["user"])
 
     if key in tasks:
-        users[email]["coin"] += tasks[key]["coin"]
-        users[email]["xp"] += tasks[key]["xp"]
+        t=tasks[key]
+        user["coin"]+=t["coin"]
+        user["xp"]+=t["xp"]
+
+        streak_update(user)
+        level_up(user)
+
+        user["logs"].append(
+            f"✔ {t['name']} → +{t['coin']} coin +{t['xp']} xp"
+        )
+
+    return redirect("/dashboard")
+
+@app.route("/gacha")
+def gacha():
+    if "user" not in session:
+        return redirect("/login")
+
+    user=get_user(session["user"])
+
+    if user["coin"] < 150:
+        user["logs"].append("❌ Yetersiz coin (150 gerekli)")
+        return redirect("/dashboard")
+
+    user["coin"] -= 150
+
+    rarity,reward = roll_loot()
+
+    if "coin" in reward:
+        amount=int(reward.split()[0])
+        user["coin"]+=amount
+
+    user["logs"].append(f"🎁 {rarity} → {reward}")
 
     return redirect("/dashboard")
 
@@ -64,5 +147,7 @@ def logout():
     session.clear()
     return redirect("/login")
 
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+# ---------- RUN ----------
+
+if __name__=="__main__":
+    app.run(host="0.0.0.0",port=10000)
