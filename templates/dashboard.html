@@ -1,58 +1,41 @@
 <!DOCTYPE html>
 <html>
-<head>
-<title>Dashboard</title>
-<style>
-body{font-family:Arial;text-align:center;background:#111;color:white}
-.card{background:#1e1e1e;padding:20px;margin:20px auto;width:320px;border-radius:15px}
-.btn{display:block;margin:8px;padding:12px;background:#6c5cff;color:white;text-decoration:none;border-radius:10px}
-.gacha{background:linear-gradient(45deg,#ff00cc,#3333ff)}
-.result{margin-top:20px;font-size:20px}
-.log{font-size:14px;text-align:left;margin-top:10px}
-</style>
-</head>
-<body>
+<body style="font-family:sans-serif">
 
-<h2>STUDY RPG PANEL</h2>
+<h2>Dashboard</h2>
 
-<div class="card">
-<h3>XP: {{xp}}</h3>
-<h3>Coin: {{coin}}</h3>
-</div>
+Level: {{user.level}} <br>
+XP: {{user.xp}} <br>
+Coin: {{user.coin}} <br>
+Streak: {{user.streak}} 🔥
 
-<div class="card">
+<hr>
+
 <h3>Görevler</h3>
 
-<a class="btn" href="/task/branch">Branş Deneme → 35 coin / 10 xp</a>
-<a class="btn" href="/task/konu">Konu Bitirme → 150 coin / 45 xp</a>
-<a class="btn" href="/task/ayt">AYT Deneme → 200 coin / 55 xp</a>
-<a class="btn" href="/task/tyt">TYT Deneme → 200 coin / 55 xp</a>
-<a class="btn" href="/task/analysis">Deneme Analizi → 50 coin / 25 xp</a>
-<a class="btn" href="/task/mistake">Yanlışlara Bakma → 100 coin / 30 xp</a>
-
-</div>
-
-<div class="card">
-<h3>🎰 GACHA (100 coin)</h3>
-<a class="btn gacha" href="/gacha">OPEN BOX</a>
-
-{% if result %}
-<div class="result">
-<b>{{result[0]}}</b><br>
-{{result[1]}}
-</div>
-{% endif %}
-</div>
-
-<div class="card">
-<h3>Son Lootlar</h3>
-<div class="log">
-{% for item in log %}
-• {{item.rarity}} — {{item.reward}}<br>
+{% for key,task in tasks.items() %}
+<a href="/task/{{key}}">
+<button>{{task.name}} (+{{task.coin}} coin / {{task.xp}} XP)</button>
+</a>
+<br><br>
 {% endfor %}
-</div>
-</div>
 
+<hr>
+
+<h3>🎁 Gacha</h3>
+
+<a href="/gacha">
+<button>Gacha Aç (150 coin)</button>
+</a>
+
+<hr>
+
+<h3>Loot Log</h3>
+{% for l in user.loot_log %}
+{{l}}<br>
+{% endfor %}
+
+<br>
 <a href="/logout">Logout</a>
 
 </body>

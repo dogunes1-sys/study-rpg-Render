@@ -1,225 +1,141 @@
-import os, json, random, datetime
+import os
+import random
+import datetime
 from flask import Flask, render_template, request, redirect, session
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = "secretkey"
+app.secret_key = "supersecretkey"
 
-DATA_FILE = "user.json"
-LOG_FILE = "gacha_log.json"
+# ---------- DATA STORAGE ----------
+users = {}
 
-# ---------- DATA ----------
-
-def load_data():
-    if not os.path.exists(DATA_FILE):
-        return {
-            "coin":0,
-            "xp":0,
-            "level":1,
-            "daily_coin":0,
-            "last_day":str(datetime.date.today()),
-            "streak":0,
-            "last_task_day":""
-        }
-    return json.load(open(DATA_FILE))
-
-def save_data(data):
-    json.dump(data, open(DATA_FILE,"w"))
-
-def load_log():
-    if not os.path.exists(LOG_FILE):
-        return []
-    return json.load(open(LOG_FILE))
-
-def save_log(log):
-    json.dump(log, open(LOG_FILE,"w"))
-
-# ---------- LEVEL ----------
-
-def check_level(data):
-    need = data["level"] * 100
-    if data["xp"] >= need:
-        data["xp"] -= need
-        data["level"] += 1
-
-def rank_name(level):
-    ranks=[(1,"Bronze"),(5,"Silver"),(10,"Gold"),(20,"Platinum"),(35,"Diamond"),(50,"Mythic")]
-    r="Bronze"
-    for lvl,name in ranks:
-        if level>=lvl:
-            r=name
-    return r
-
-# ---------- DAILY RESET ----------
-
-def reset_daily(data):
-    today=str(datetime.date.today())
-    if data["last_day"]!=today:
-        data["daily_coin"]=0
-        data["last_day"]=today
-
-# ---------- STREAK ----------
-
-def streak_bonus(data):
-
-    bonuses={
-        3:("coin",50),
-        7:("coin",200),
-        14:("epic",None),
-        30:("legendary",None)
-    }
-
-    if data["streak"] in bonuses:
-
-        typ,val=bonuses[data["streak"]]
-
-        if typ=="coin":
-            data["coin"]+=val
-            return f"🔥 STREAK BONUS → {val} coin"
-
-        if typ=="epic":
-            rarity,reward=roll(force="Epic")
-            return f"🔥 STREAK EPIC → {reward}"
-
-        if typ=="legendary":
-            rarity,reward=roll(force="Legendary")
-            return f"🔥 STREAK LEGENDARY → {reward}"
-
-    return None
-
-
-def update_streak(data):
-
-    today=datetime.date.today()
-    last=data["last_task_day"]
-
-    if last=="":
-        data["streak"]=1
-        data["last_task_day"]=str(today)
-        return None
-
-    last_date=datetime.date.fromisoformat(last)
-    diff=(today-last_date).days
-
-    if diff==1:
-        data["streak"]+=1
-    elif diff>1:
-        data["streak"]=1
-
-    data["last_task_day"]=str(today)
-
-    return streak_bonus(data)
-
-# ---------- GACHA ----------
-
-rewards={
-"Common":["5 dk mola","10 coin","15 coin"],
-"Rare":["1 video","50 coin","30 dk oyun"],
-"Epic":["1 bölüm anime","100 coin","XP x2 buff"],
-"Legendary":["2 saat guilt-free oyun","500 coin","XP x3 potion"]
+# ---------- TASKS ----------
+TASKS = {
+    "branch": {"name": "Branş Deneme", "coin": 35, "xp": 10},
+    "topic": {"name": "Konu Bitirme", "coin": 150, "xp": 45},
+    "ayt": {"name": "AYT Deneme", "coin": 200, "xp": 55},
+    "tyt": {"name": "TYT Deneme", "coin": 200, "xp": 55},
+    "analysis": {"name": "Deneme Analizi", "coin": 50, "xp": 25},
+    "mistakes": {"name": "Yanlışlara Bakma", "coin": 100, "xp": 30},
 }
 
-def roll(force=None):
+# ---------- GACHA ----------
+GACHA_COST = 150
 
-    if force:
-        rarity=force
-    else:
-        r=random.random()
-        if r<0.60: rarity="Common"
-        elif r<0.90: rarity="Rare"
-        elif r<0.99: rarity="Epic"
-        else: rarity="Legendary"
+LOOT_TABLE = [
+    ("Common", 60, ["5 dk mola", "10 coin", "Motivasyon videosu"]),
+    ("Rare", 30, ["1 video", "25 coin", "Mini ödül molası"]),
+    ("Epic", 9, ["1 bölüm anime", "45 dk oyun", "XP x2 boost", "100 coin"]),
+    ("Legendary", 1, ["2 saat guilt-free oyun", "500 coin", "XP x3 potion"])
+]
 
-    return rarity,random.choice(rewards[rarity])
-
-# ---------- ROUTES ----------
-
+# ---------- LOGIN ----------
 @app.route("/")
 def home():
-    return redirect("/dashboard")
+    if "user" in session:
+        return redirect("/dashboard")
+    return redirect("/login")
 
-@app.route("/dashboard")
-def dashboard():
+@app.route("/login", methods=["GET","POST"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
 
-    data=load_data()
-    reset_daily(data)
-    check_level(data)
-    save_data(data)
+        if email not in users:
+            users[email] = {
+                "coin": 0,
+                "xp": 0,
+                "level": 1,
+                "streak": 0,
+                "last_task": None,
+                "loot_log": []
+            }
 
-    leaderboard=[
-        {"name":"Shadow","coin":4200},
-        {"name":"Zenith","coin":3900},
-        {"name":"Nova","coin":3100},
-        {"name":"You","coin":data["coin"]}
-    ]
-    leaderboard=sorted(leaderboard,key=lambda x:x["coin"],reverse=True)
-
-    return render_template(
-        "dashboard.html",
-        data=data,
-        rank=rank_name(data["level"]),
-        board=leaderboard,
-        gacha=session.pop("gacha_result",None),
-        streak_msg=session.pop("streak_msg",None)
-    )
-
-# ---------- TASK ----------
-
-@app.route("/task",methods=["POST"])
-def task():
-
-    coin=int(request.form["coin"])
-    xp=int(request.form["xp"])
-
-    data=load_data()
-    reset_daily(data)
-
-    if data["daily_coin"]>=1000:
+        session["user"] = email
         return redirect("/dashboard")
 
-    data["coin"]+=coin
-    data["xp"]+=xp
-    data["daily_coin"]+=coin
+    return render_template("login.html")
 
-    msg=update_streak(data)
+# ---------- DASHBOARD ----------
+@app.route("/dashboard")
+def dashboard():
+    if "user" not in session:
+        return redirect("/login")
 
-    check_level(data)
-    save_data(data)
+    user = users[session["user"]]
+    return render_template("dashboard.html", user=user, tasks=TASKS)
 
-    if msg:
-        session["streak_msg"]=msg
+# ---------- TASK ----------
+@app.route("/task/<task>")
+def task(task):
+    if "user" not in session:
+        return redirect("/login")
+
+    if task not in TASKS:
+        return redirect("/dashboard")
+
+    u = users[session["user"]]
+    t = TASKS[task]
+
+    today = str(datetime.date.today())
+
+    # streak check
+    if u["last_task"] == today:
+        pass
+    else:
+        yesterday = str(datetime.date.today() - datetime.timedelta(days=1))
+        if u["last_task"] == yesterday:
+            u["streak"] += 1
+        else:
+            u["streak"] = 1
+
+    u["last_task"] = today
+
+    # reward
+    u["coin"] += t["coin"]
+    u["xp"] += t["xp"]
+
+    # level up
+    if u["xp"] >= u["level"] * 100:
+        u["xp"] = 0
+        u["level"] += 1
 
     return redirect("/dashboard")
 
 # ---------- GACHA ----------
-
 @app.route("/gacha")
 def gacha():
+    if "user" not in session:
+        return redirect("/login")
 
-    data=load_data()
+    u = users[session["user"]]
 
-    if data["coin"]<150:
-        session["gacha_result"]=("NO COIN","150 coin gerekli")
+    if u["coin"] < GACHA_COST:
         return redirect("/dashboard")
 
-    data["coin"]-=150
+    u["coin"] -= GACHA_COST
 
-    rarity,reward=roll()
+    roll = random.randint(1,100)
+    total = 0
 
-    if "coin" in reward:
-        for w in reward.split():
-            if w.isdigit():
-                data["coin"]+=int(w)
+    for rarity, chance, rewards in LOOT_TABLE:
+        total += chance
+        if roll <= total:
+            reward = random.choice(rewards)
+            u["loot_log"].append(f"{rarity} → {reward}")
+            break
 
-    save_data(data)
+    return render_template("gacha.html", rarity=rarity, reward=reward)
 
-    log=load_log()
-    log.append({"date":str(datetime.datetime.now()),"rarity":rarity,"reward":reward})
-    save_log(log)
-
-    session["gacha_result"]=(rarity,reward)
-    return redirect("/dashboard")
+# ---------- LOGOUT ----------
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
 
 # ---------- RUN ----------
-
-if __name__=="__main__":
-    app.run(host="0.0.0.0",port=10000)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
