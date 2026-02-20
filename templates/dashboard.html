@@ -4,26 +4,46 @@ Level {{user.level}} | XP {{user.xp}} | Coin {{user.coin}} | 🔥 {{user.streak}
 
 <hr>
 
+<!-- DAILY REWARD -->
+<a href="/daily">
+<button style="background:gold;padding:10px;border:none;border-radius:8px;">
+🎁 Günlük Ödül Al
+</button>
+</a>
+
+<hr>
+
 <h2>Görevler</h2>
 
 {% for key,task in tasks.items() %}
-<div style="border:1px solid gray;margin:10px;padding:10px">
+<div style="border:1px solid gray;margin:10px;padding:10px;border-radius:10px">
 <b>{{task.name}}</b><br>
-+{{task.coin}} coin | +{{task.xp}} xp<br>
-<a href="/task/{{key}}"><button>Yaptım</button></a>
++{{task.coin}} coin | +{{task.xp}} xp<br><br>
+<a href="/task/{{key}}">
+<button style="padding:6px 14px;">Yaptım</button>
+</a>
 </div>
 {% endfor %}
 
 <hr>
 
-<a href="/gacha"><button>🎰 Gacha Aç (150)</button></a>
+<a href="/gacha">
+<button style="background:purple;color:white;padding:12px;border:none;border-radius:10px;">
+🎰 Gacha Aç (100 Coin)
+</button>
+</a>
 
 <hr>
 
 <h3>Son Olaylar</h3>
+
+{% if user.logs %}
 {% for log in user.logs[::-1][:8] %}
 {{log}}<br>
 {% endfor %}
+{% else %}
+Henüz log yok
+{% endif %}
 
-<br>
+<br><br>
 <a href="/logout">Çıkış</a>

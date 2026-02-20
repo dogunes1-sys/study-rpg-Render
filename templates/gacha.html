@@ -1,50 +1,64 @@
+<!DOCTYPE html>
 <html>
 <head>
+<title>Loot Açılıyor...</title>
+
 <style>
 body{
-text-align:center;
-font-family:sans-serif;
-background:black;
-color:white;
+    text-align:center;
+    font-family:Arial;
+    background:#0f1226;
+    color:white;
 }
 
-.box{
-font-size:40px;
-margin-top:100px;
-animation:spin 1s infinite;
+#box{
+    margin-top:120px;
+    font-size:80px;
+    animation:shake 0.7s infinite;
 }
 
-@keyframes spin{
-0%{transform:rotate(0)}
-100%{transform:rotate(360deg)}
+@keyframes shake{
+    0%{transform:rotate(0deg)}
+    25%{transform:rotate(8deg)}
+    50%{transform:rotate(0deg)}
+    75%{transform:rotate(-8deg)}
+    100%{transform:rotate(0deg)}
 }
 
-.result{
-font-size:30px;
-margin-top:40px;
-animation:fade 2s forwards;
-opacity:0;
+#result{
+    display:none;
+    margin-top:40px;
 }
 
-@keyframes fade{
-to{opacity:1}
+.common{color:lightgray}
+.rare{color:#4da6ff}
+.epic{color:#c77dff}
+.legendary{
+    color:gold;
+    font-size:28px;
+    text-shadow:0 0 15px gold;
 }
 </style>
 </head>
 <body>
 
-<div class="box">🎁</div>
+<div id="box">🎁</div>
 
-<div class="result">
-<h2>{{rarity}}</h2>
+<div id="result">
+<h2 class="{{rarity.lower()}}">
+{{rarity}}!
+</h2>
+
 <h1>{{reward}}</h1>
-<a href="/dashboard"><button>Dön</button></a>
+
+<br>
+<a href="/dashboard"><button>Devam</button></a>
 </div>
 
 <script>
 setTimeout(()=>{
-document.querySelector(".box").style.display="none"
-document.querySelector(".result").style.opacity=1
+    document.getElementById("box").style.display="none"
+    document.getElementById("result").style.display="block"
 },2000)
 </script>
 
