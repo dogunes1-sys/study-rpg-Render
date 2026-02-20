@@ -65,8 +65,21 @@ def dashboard():
     if "user" not in session:
         return redirect("/login")
 
-    user = users[session["user"]]
-    return render_template("dashboard.html", user=user, tasks=TASKS)
+    email = session["user"]
+
+    if email not in users:
+        users[email] = {
+            "xp": 0,
+            "coin": 0,
+            "level": 1,
+            "streak": 0,
+            "last_task": None,
+            "log": []
+        }
+
+    user = users[email]
+
+    return render_template("dashboard.html", user=user, email=email)
 
 # ---------- TASK ----------
 @app.route("/task/<task>")
