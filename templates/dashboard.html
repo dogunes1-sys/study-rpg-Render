@@ -1,6 +1,6 @@
 <h2>{{email}}</h2>
 
-Level {{user.level}} | XP {{user.xp}} | Coin {{user.coin}} | 🔥 Streak {{user.streak}}
+Level {{user.level}} | XP {{user.xp}} | Coin {{user.coin}} | 🔥 {{user.streak}}
 
 <hr>
 
@@ -16,12 +16,12 @@ Level {{user.level}} | XP {{user.xp}} | Coin {{user.coin}} | 🔥 Streak {{user.
 
 <hr>
 
-<a href="/gacha"><button>🎰 Gacha Aç (150 coin)</button></a>
+<a href="/gacha"><button>🎰 Gacha Aç (150)</button></a>
 
 <hr>
 
-<h3>Log</h3>
-{% for log in user.logs[::-1][:10] %}
+<h3>Son Olaylar</h3>
+{% for log in user.logs[::-1][:8] %}
 {{log}}<br>
 {% endfor %}
 
