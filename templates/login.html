@@ -1,9 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body{
+font-family:Arial;
+background:#111;
+color:#eee;
+display:flex;
+justify-content:center;
+align-items:center;
+height:100vh;
+margin:0;
+}
+
+.box{
+background:#1c1c1c;
+padding:30px;
+border-radius:12px;
+width:300px;
+box-shadow:0 0 15px rgba(0,0,0,0.6);
+}
+
+input{
+width:100%;
+padding:10px;
+margin:8px 0;
+border:none;
+border-radius:8px;
+background:#2a2a2a;
+color:white;
+}
+
+button{
+width:100%;
+padding:10px;
+margin-top:10px;
+border:none;
+border-radius:8px;
+cursor:pointer;
+font-size:15px;
+}
+
+.login{background:#4CAF50;color:white;}
+.register{background:#2196F3;color:white;}
+.back{background:#444;color:white;}
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
 <h2>Login</h2>
 
-<form method="post">
-    Email<br>
-    <input name="email" placeholder="email">
-<input name="password" type="password" placeholder="password">
+<form method="POST">
 
-    <button>Login</button>
+<input name="email" placeholder="Email" required>
+<input name="password" type="password" placeholder="Password" required>
+
+<button class="login">Login</button>
+
 </form>
+
+<a href="/register">
+<button class="register">Register</button>
+</a>
+
+<br>
+
+<button class="back" onclick="history.back()">← Geri</button>
+
+</div>
+
+</body>
+</html>
