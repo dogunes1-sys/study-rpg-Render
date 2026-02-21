@@ -48,11 +48,22 @@ ACHIEVEMENTS=[
 ("machine",100,"Machine")
 ]
 
-FAKE_LEADERBOARD=[
-("ShadowMaster",2400),
-("BrainBeast",2100),
-("UltraMind",1800),
-("FocusGod",1500)
+FAKE_LEADERBOARD = [
+("ShadowMaster",42),("BrainBeast",39),("UltraMind",37),("FocusGod",35),
+("NightCoder",33),("IronWill",31),("Zenith",30),("Nova",29),
+("Atlas",28),("Blaze",27),("Orion",26),("Titan",25),
+("Pulse",24),("Echo",23),("Draco",22),("Vortex",21),
+("Falcon",20),("Ghost",19),("Inferno",18),("Jade",17),
+("Knight",16),("Lynx",15),("Maverick",14),("Nexus",13),
+("Obsidian",12),("Phantom",11),("Quasar",10),("Rogue",9),
+("Sentinel",8),("Tempest",7),("Umbra",6),("Vector",5),
+("Warden",4),("Xeno",3),("Yukon",2),("Zephyr",1),
+
+("Alpha",40),("Beta",38),("Gamma",36),("Delta",34),
+("Epsilon",32),("Zeta",30),("Eta",28),("Theta",26),
+("Iota",24),("Kappa",22),("Lambda",20),("Mu",18),
+("Nu",16),("Xi",14),("Omicron",12),("Pi",10),
+("Rho",8),("Sigma",6),("Tau",4),("Omega",2)
 ]
 
 # =========================
@@ -190,9 +201,45 @@ def home():
 @app.route("/login",methods=["GET","POST"])
 def login():
     if request.method=="POST":
-        session["user"]=request.form["email"]
-        return redirect("/dashboard")
+
+        email=request.form["email"]
+        password=request.form["password"]
+
+        try:
+            res=supabase.auth.sign_in_with_password({
+                "email":email,
+                "password":password
+            })
+
+            session["user"]=email
+            return redirect("/dashboard")
+
+        except Exception as e:
+            return "Login failed"
+
     return render_template("login.html")
+
+@app.route("/register",methods=["GET","POST"])
+def register():
+
+    if request.method=="POST":
+
+        email=request.form["email"]
+        password=request.form["password"]
+
+        try:
+            supabase.auth.sign_up({
+                "email":email,
+                "password":password
+            })
+
+            session["user"]=email
+            return redirect("/dashboard")
+
+        except:
+            return "Register error"
+
+    return render_template("register.html")
 
 @app.route("/dashboard")
 def dashboard():
@@ -204,8 +251,9 @@ def dashboard():
 
     rank=get_rank(user["level"])
 
+    # LEVEL BASED LEADERBOARD
     leaderboard=sorted(
-        FAKE_LEADERBOARD+[("You",user["coin"])],
+        FAKE_LEADERBOARD+[("You",user["level"])],
         key=lambda x:x[1],
         reverse=True
     )

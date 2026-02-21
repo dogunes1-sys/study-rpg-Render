@@ -130,9 +130,9 @@ Henüz yok
 <h3>🏆 Leaderboard</h3>
 
 <div class="card">
-{% for name,coin in leaderboard %}
+{% for name,level in leaderboard %}
 <div class="leader">
-{{loop.index}}. {{name}} — {{coin}}
+{{loop.index}}. {{name}} — Lv {{level}}
 </div>
 {% endfor %}
 </div>
