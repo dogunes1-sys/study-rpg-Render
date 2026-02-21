@@ -200,6 +200,7 @@ def home():
 
 @app.route("/login",methods=["GET","POST"])
 def login():
+
     if request.method=="POST":
 
         email=request.form["email"]
@@ -211,11 +212,12 @@ def login():
                 "password":password
             })
 
+            # LOGIN BAŞARILI
             session["user"]=email
             return redirect("/dashboard")
 
         except Exception as e:
-            return "Login failed"
+            return render_template("login.html", error="Email veya şifre yanlış")
 
     return render_template("login.html")
 
